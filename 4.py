@@ -8,21 +8,16 @@ from EMP import emp
 from KD import kd
 from RK4 import rk4
 
-# ============================================================
-# Настройки
-# ============================================================
-res = 100               # сколько раз прокручиваем (число стартов подряд)
-t_run = 1000.0          # длительность одного прогона, сек
-u0 = np.array([0.1, 0.1, 0.1], dtype=float)  # начальное условие первого прогона
-params = (1.0, 1.0, 1.0)  # (a1, a2, a3) фиксированы
-MAX_PEAKS = 2000        # максимум сохраняемых максимумов на один прогон
+res = 100
+t_run = 1000.0
+u0 = np.array([0.1, 0.1, 0.1], dtype=float)
+params = (1.0, 1.0, 1.0)
+MAX_PEAKS = 2000
 
-# Шаги, которые выводятся на один график
 h_values = np.array([0.01, 0.005, 0.001])
 colors = ["tab:green", "tab:blue", "tab:purple"]
 
-# Окно по оси Y: (min, max) или None (автоподбор по 0.5 и 99.5
-# перцентилям пиков). Выбросы уходят за окно. Строим только по x.
+
 variables = [
     (0, "x", "X", None),
 ]
@@ -32,9 +27,6 @@ for _, _, folder, _ in variables:
     os.makedirs(os.path.join(save_folder, folder), exist_ok=True)
 
 
-# ============================================================
-# Система: Sprott Case B
-# ============================================================
 @njit(cache=True)
 def f(u, a1, a2, a3):
     x = u[0]
@@ -47,8 +39,6 @@ def f(u, a1, a2, a3):
     ])
 
 
-# RK4 тоже строим, чтобы можно было сравнить с ним (при необходимости
-# уберите эту строку из списка)
 methods = [
     ("Euler", njit(euler)),
     ("Euler-Cromer", njit(euler_kromer)),
@@ -58,12 +48,8 @@ methods = [
 ]
 
 
-# ============================================================
-# Расчёт
-# ============================================================
 @njit(cache=True)
 def find_peaks(x, out):
-    """Локальные максимумы по всему прогону (transient не отбрасываем)."""
     cnt = 0
     for i in range(1, len(x) - 1):
         if x[i] > x[i - 1] and x[i] > x[i + 1]:
@@ -76,12 +62,7 @@ def find_peaks(x, out):
 @njit(parallel=True)
 def continuation_scan(method, f, h_vals, u_start, t1, n_res,
                       a1, a2, a3, max_peaks):
-    """
-    Для каждого шага h (параллельно):
-      прогон 1: стартуем из u_start, считаем t1 секунд;
-      последняя точка становится начальным условием следующего прогона;
-      так n_res раз. В каждом прогоне запоминаем максимумы x, y, z.
-    """
+
     nh = h_vals.shape[0]
     buf = np.zeros((nh, 3, n_res, max_peaks))
     counts = np.zeros((nh, 3, n_res), dtype=np.int64)
@@ -108,7 +89,6 @@ def continuation_scan(method, f, h_vals, u_start, t1, n_res,
             for c in range(3):
                 counts[k, c, r] = find_peaks(sol[:, c], buf[k, c, r])
 
-            # последняя точка -> начальное условие следующего прогона
             u = sol[sol.shape[0] - 1].copy()
 
     return buf, counts
@@ -121,11 +101,7 @@ def run_scan(method):
     )
 
 
-# ============================================================
-# График
-# ============================================================
 def collect(buf, counts, k, c):
-    """Пары (номер прогона, значение максимума) для шага k и переменной c."""
     runs = np.concatenate(
         [np.full(cnt, r + 1) for r, cnt in enumerate(counts[k, c])]
     )

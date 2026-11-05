@@ -8,20 +8,15 @@ from EMP import emp
 from KD import kd
 from RK4 import rk4
 
-# ============================================================
-# Настройки
-# ============================================================
-ct = 2000.0             # общее время интегрирования (одинаковое для всех шагов)
-IC_RANGE = (0.0, 1.0)   # диапазон случайных начальных условий
-N_IC = 5                # число начальных условий; объём усредняется по ним
-SEED = 12345            # одинаковые старты у всех методов и RK4
-params = (1.0, 1.0, 1.0)  # (a1, a2, a3) фиксированы
 
-# Значения шага: линейная сетка от 0.001 до 0.1
+ct = 2000.0
+IC_RANGE = (0.0, 1.0)
+N_IC = 5
+SEED = 12345
+params = (1.0, 1.0, 1.0)
+
 h_values = np.linspace(0.001, 0.1, 100)
 
-# Фиксированная высота окна по Y для каждого метода.
-# None -> подбирается автоматически (95-й перцентиль данных * 1.3)
 y_lims = {
     "Euler": None,
     "Euler-Cromer": None,
@@ -34,10 +29,6 @@ AUTO_MARGIN = 1.3
 save_folder = "t2_phase_volume_vs_h_plots"
 os.makedirs(save_folder, exist_ok=True)
 
-
-# ============================================================
-# Система: Sprott Case B
-# ============================================================
 @njit(cache=True)
 def f(u, a1, a2, a3):
     x = u[0]
@@ -58,10 +49,6 @@ methods = [
 ]
 rk4_jit = njit(rk4)
 
-
-# ============================================================
-# Расчёт фазового объёма для всех шагов (параллельно по шагам)
-# ============================================================
 @njit(parallel=True)
 def phase_volume_vs_h(method, f, h_vals, u_init, ct, a1, a2, a3):
     n = h_vals.shape[0]
@@ -76,7 +63,6 @@ def phase_volume_vs_h(method, f, h_vals, u_init, ct, a1, a2, a3):
         for j in range(n_ic):
             t_arr, s = method(f, u_init[j].copy(), 0.0, ct, h, a1, a2, a3)
 
-            # Проверка: не разошлось ли решение
             ok = True
             for i in range(s.shape[0]):
                 if (not np.isfinite(s[i, 0]) or not np.isfinite(s[i, 1])
@@ -88,14 +74,13 @@ def phase_volume_vs_h(method, f, h_vals, u_init, ct, a1, a2, a3):
                     break
 
             if ok:
-                # V = (x_max-x_min)(y_max-y_min)(z_max-z_min), без transient
+                # V = (x_max-x_min)(y_max-y_min)(z_max-z_min)
                 vx = np.max(s[:, 0]) - np.min(s[:, 0])
                 vy = np.max(s[:, 1]) - np.min(s[:, 1])
                 vz = np.max(s[:, 2]) - np.min(s[:, 2])
                 total += vx * vy * vz
                 cnt += 1
 
-        # Если разошлось хотя бы одно ИУ -> точка не строится (NaN)
         if cnt == n_ic:
             volumes[k] = total / n_ic
 
@@ -107,10 +92,6 @@ def run_scan(method, u_init):
         method, f, h_values, u_init, ct, params[0], params[1], params[2]
     )
 
-
-# ============================================================
-# График
-# ============================================================
 def get_ylim(method_name, vol_m, vol_rk4):
     manual = y_lims.get(method_name)
     if manual is not None:

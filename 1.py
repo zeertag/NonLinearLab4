@@ -8,13 +8,11 @@ from EMP import emp
 from KD import kd
 from RK4 import rk4
 
-# ============================================================
-# Настройки
-# ============================================================
+
 h = 0.001
-ct = 2000.0     # общее время интегрирования
-IC_RANGE = (0.0, 1.0)   # диапазон случайных начальных условий
-SEED = 12345            # фиксируем, чтобы у всех методов и RK4 были одинаковые старты
+ct = 2000.0
+IC_RANGE = (0.0, 1.0)
+SEED = 12345
 start_params = (1.0, 1.0, 1.0)
 
 a1_values = np.linspace(0, 5, 100)
@@ -32,9 +30,6 @@ y_lims = {
 save_folder = "t1_phase_volume_plots"
 os.makedirs(save_folder, exist_ok=True)
 
-# ============================================================
-# Система: Sprott Case B
-# ============================================================
 @njit(cache=True)
 def f(u, a1, a2, a3):
     x = u[0]
@@ -60,9 +55,6 @@ parameters = [
     ("a3", a3_values),
 ]
 
-# ============================================================
-# Расчёт фазового объёма для всех значений параметра (параллельно по ядрам)
-# ============================================================
 @njit(parallel=True)
 def phase_volume_scan(method, f, values, which, u_init, h, ct, a1_0, a2_0, a3_0):
     n = values.shape[0]
@@ -79,7 +71,6 @@ def phase_volume_scan(method, f, values, which, u_init, h, ct, a1_0, a2_0, a3_0)
 
         t_arr, s = method(f, u_init[k].copy(), 0.0, ct, h, a1, a2, a3)
 
-        # Проверяем, не разошлось ли решение
         ok = True
         for i in range(s.shape[0]):
             if (not np.isfinite(s[i, 0]) or not np.isfinite(s[i, 1])
@@ -91,8 +82,6 @@ def phase_volume_scan(method, f, values, which, u_init, h, ct, a1_0, a2_0, a3_0)
                 break
 
         if ok:
-            # Фазовый объём = произведение разностей max и min по каждой координате
-            # (участвуют ВСЕ значения, без отсечения переходного процесса)
             x_min = np.min(s[:, 0])
             x_max = np.max(s[:, 0])
             y_min = np.min(s[:, 1])
@@ -110,9 +99,6 @@ def run_scan(method, which, values, u_init):
         start_params[0], start_params[1], start_params[2]
     )
 
-# ============================================================
-# График
-# ============================================================
 def plot_phase_volume(method_name, parameter_name, params, vol_m, vol_rk4):
     plt.figure(figsize=(10, 6))
     plt.grid(True, alpha=0.3)
@@ -140,7 +126,6 @@ def plot_phase_volume(method_name, parameter_name, params, vol_m, vol_rk4):
 if __name__ == "__main__":
     rng = np.random.default_rng(SEED)
     for which, (parameter_name, params) in enumerate(parameters):
-        # Одни и те же случайные начальные условия для всех методов и RK4
         n = len(params)
         u_init = rng.uniform(IC_RANGE[0], IC_RANGE[1], size=(n, 3))
 
