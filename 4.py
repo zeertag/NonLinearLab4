@@ -35,7 +35,7 @@ def f(u, a1, a2, a3):
     return np.array([
         a1 * y * z,
         x - a2 * y,
-        a3 - x * x
+        a3 - x * y
     ])
 
 
@@ -43,7 +43,7 @@ methods = [
     ("Euler", njit(euler)),
     ("Euler-Cromer", njit(euler_kromer)),
     ("EMP", njit(emp)),
-    ("VSKD", njit(kd)),
+    ("CD", njit(kd)),
     ("RK4", njit(rk4)),
 ]
 

@@ -34,7 +34,7 @@ def f(u, a1, a2, a3):
     return np.array([
         a1 * y * z,
         x - a2 * y,
-        a3 - x * x
+        a3 - x * y
     ])
 
 
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     u_init = rng.uniform(IC_RANGE[0], IC_RANGE[1], size=(N_IC, 3))
 
     for key, S_vals in S_ranges:
-        print(f"VSKD, диапазон S: {key}...")
+        print(f"CD, диапазон S: {key}...")
         vol_kd = phase_volume_vs_S(
             kd_with_S, f, S_vals, u_init, h, ct,
             params[0], params[1], params[2]

@@ -13,7 +13,7 @@ from KD import kd
 from RK4 import rk4
 
 
-params = (1.0, 1.0, 1.0)
+params = (1.0, 1.7, 1.0)
 
 z0 = 0.1
 X_RANGE = (-4.0, 4.0)
@@ -32,7 +32,7 @@ methods = [
     ("Euler", njit(euler)),
     ("Euler-Cromer", njit(euler_kromer)),
     ("EMP", njit(emp)),
-    ("VSKD", njit(kd)),
+    ("СD", njit(kd)),
     ("RK4", njit(rk4)),
 ]
 
@@ -44,7 +44,7 @@ def f(u, a1, a2, a3):
     return np.array([
         a1 * y * z,
         x - a2 * y,
-        a3 - x * x
+        a3 - x * y
     ])
 
 

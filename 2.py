@@ -21,7 +21,7 @@ y_lims = {
     "Euler": None,
     "Euler-Cromer": None,
     "EMP": None,
-    "VSKD": None,
+    "CD": None,
 }
 AUTO_PERCENTILE = 95
 AUTO_MARGIN = 1.3
@@ -37,7 +37,7 @@ def f(u, a1, a2, a3):
     return np.array([
         a1 * y * z,
         x - a2 * y,
-        a3 - x * x
+        a3 - x * y
     ])
 
 
@@ -45,7 +45,7 @@ methods = [
     ("Euler", njit(euler)),
     ("Euler-Cromer", njit(euler_kromer)),
     ("EMP", njit(emp)),
-    ("VSKD", njit(kd)),
+    ("СD", njit(kd)),
 ]
 rk4_jit = njit(rk4)
 
